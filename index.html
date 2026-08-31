@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b7a53" />
+  <meta name="description" content="SCI GreenTrack - ระบบติดตามการใช้ทรัพยากรและก๊าซเรือนกระจกเพื่อ Net Zero Campus" />
+  <title>SCI GreenTrack | Net Zero Resource Management</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <section class="auth-gate" id="authGate" hidden>
+    <div class="auth-card">
+      <div class="auth-brand"><div class="brand-mark large">S</div><div><h1>SCI GreenTrack</h1><p>Google Sheets Resource & Carbon Management</p></div></div>
+      <div class="auth-status" id="authStatus">เข้าสู่ระบบเพื่อใช้งานฐานข้อมูลกลาง</div>
+      <form id="loginForm" class="auth-form">
+        <label>อีเมล<input id="loginEmail" type="email" autocomplete="email" required placeholder="name@vru.ac.th"></label>
+        <label>รหัสผ่าน<input id="loginPassword" type="password" autocomplete="current-password" required minlength="6"></label>
+        <button class="primary-btn" type="submit">เข้าสู่ระบบ</button>
+      </form>
+      <form id="signupForm" class="auth-form" hidden>
+        <label>ชื่อที่แสดง<input id="signupName" type="text" required placeholder="ชื่อ-นามสกุล"></label>
+        <label>อีเมล<input id="signupEmail" type="email" autocomplete="email" required placeholder="name@vru.ac.th"></label>
+        <label>รหัสผ่าน<input id="signupPassword" type="password" autocomplete="new-password" required minlength="6"></label>
+        <button class="primary-btn" type="submit">สร้างบัญชี</button>
+      </form>
+      <button class="link-btn auth-switch" id="authSwitchBtn" type="button" hidden>สมัครใช้งาน</button>
+      <div class="auth-help">บัญชีผู้ใช้สร้างโดย Admin จากเมนู <b>Users & Roles</b> เพื่อควบคุมสิทธิ์การเข้าถึง</div>
+    </div>
+  </section>
+
+  <div class="app-shell" id="appShell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">S</div>
+        <div>
+          <div class="brand-title">SCI GreenTrack</div>
+          <div class="brand-subtitle">Net Zero Campus</div>
+        </div>
+      </div>
+
+      <nav class="nav-list" id="navList">
+        <button class="nav-item active" data-view="dashboard"><span>⌂</span><b>Dashboard</b></button>
+        <button class="nav-item" data-view="resources"><span>▦</span><b>Resource Analytics</b></button>
+        <button class="nav-item" data-view="carbon"><span>◉</span><b>Carbon Center</b></button>
+        <button class="nav-item" data-view="targets"><span>◎</span><b>Net Zero Target</b></button>
+        <button class="nav-item" data-view="actions"><span>✓</span><b>Action Plan</b></button>
+        <button class="nav-item" data-view="entry"><span>＋</span><b>บันทึกข้อมูล</b></button>
+        <button class="nav-item" data-view="reports"><span>▤</span><b>Reports</b></button>
+        <button class="nav-item admin-only" data-view="users"><span>♙</span><b>Users & Roles</b></button>
+        <button class="nav-item admin-only" data-view="settings"><span>⚙</span><b>Data & Settings</b></button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="mini-card">
+          <div class="mini-label">สถานะระบบ</div>
+          <div class="status-row"><span class="dot online" id="cloudDot"></span><span id="cloudStatus">กำลังตรวจสอบ...</span></div>
+          <div class="mini-note" id="cloudNote">Google Sheets Database + Login</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="icon-btn mobile-only" id="menuBtn" aria-label="เปิดเมนู">☰</button>
+        <div>
+          <div class="eyebrow">คณะวิทยาศาสตร์และเทคโนโลยี</div>
+          <h1 id="pageTitle">ภาพรวมการใช้ทรัพยากร</h1>
+        </div>
+        <div class="topbar-actions">
+          <label class="year-picker">ปี
+            <select id="globalYear"></select>
+          </label>
+          <span class="badge demo" id="demoBadge">ข้อมูลสาธิต</span>
+          <button class="user-chip" id="userChip" type="button" hidden><span class="user-avatar" id="userAvatar">U</span><span><b id="userName">User</b><small id="userRole">USER</small></span></button>
+          <button class="secondary-btn compact" id="refreshCloudBtn" type="button" title="โหลดข้อมูลจากฐานข้อมูลอีกครั้ง">↻</button>
+          <button class="secondary-btn compact" id="logoutBtn" type="button" hidden>ออกจากระบบ</button>
+        </div>
+      </header>
+
+      <div class="demo-notice" id="demoNotice">
+        <strong id="modeNoticeTitle">โหมดสาธิต:</strong> <span id="modeNoticeText">ตัวเลขเริ่มต้นเป็นข้อมูลสมมติสำหรับทดสอบระบบ ไม่ใช่ข้อมูลทางการของคณะฯ</span>
+        <button class="link-btn admin-only" data-view-jump="settings">จัดการข้อมูล</button>
+      </div>
+
+      <section class="view active" id="view-dashboard">
+        <div class="hero-panel">
+          <div>
+            <span class="hero-kicker">SMART RESOURCE & CARBON MANAGEMENT</span>
+            <h2>จาก “ข้อมูลการใช้ทรัพยากร” สู่ “การตัดสินใจเพื่อ Net Zero”</h2>
+            <p>ติดตามแนวโน้ม เปรียบเทียบรายปี ตรวจจับจุดที่ต้องเฝ้าระวัง กำหนดเป้าหมาย และติดตามมาตรการลดก๊าซเรือนกระจกในระบบเดียว</p>
+          </div>
+          <div class="hero-score">
+            <div class="score-ring" id="greenScoreRing"><span id="greenScore">--</span><small>/100</small></div>
+            <div><b>Green Performance Score</b><small>ประเมินจากแนวโน้มทรัพยากรหลัก</small></div>
+          </div>
+        </div>
+
+        <div class="kpi-grid" id="kpiGrid"></div>
+
+        <div class="grid two-col">
+          <article class="card chart-card">
+            <div class="card-head"><div><span class="section-tag">TREND</span><h3>แนวโน้มการใช้ทรัพยากรรายเดือน</h3></div><select id="trendResource"></select></div>
+            <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+          </article>
+          <article class="card">
+            <div class="card-head"><div><span class="section-tag">HEALTH CHECK</span><h3>Resource Health</h3></div><span class="muted">เทียบปีก่อน</span></div>
+            <div id="healthList" class="health-list"></div>
+          </article>
+        </div>
+
+        <div class="grid two-col">
+          <article class="card chart-card">
+            <div class="card-head"><div><span class="section-tag">YOY</span><h3>เปรียบเทียบรายปี</h3></div></div>
+            <div class="chart-wrap"><canvas id="yoyChart"></canvas></div>
+          </article>
+          <article class="card insight-card">
+            <div class="card-head"><div><span class="section-tag">SMART INSIGHT</span><h3>ประเด็นที่ควรดำเนินการ</h3></div></div>
+            <div id="insightList"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-resources">
+        <div class="section-intro"><div><span class="section-tag">RESOURCE ANALYTICS</span><h2>วิเคราะห์ทรัพยากร 8 หมวดหลัก</h2><p>เลือกหมวดเพื่อดูข้อมูลรายเดือน แนวโน้ม และการเปลี่ยนแปลงจากปีก่อนหน้า</p></div></div>
+        <div class="resource-grid" id="resourceGrid"></div>
+        <article class="card resource-detail-card">
+          <div class="card-head">
+            <div><span class="section-tag" id="resourceDetailTag">RESOURCE</span><h3 id="resourceDetailTitle">เลือกทรัพยากร</h3></div>
+            <div class="pill" id="resourceDetailChange">--</div>
+          </div>
+          <div class="grid two-col">
+            <div class="chart-wrap"><canvas id="resourceDetailChart"></canvas></div>
+            <div class="table-wrap"><table><thead><tr><th>เดือน</th><th>ปีก่อน</th><th>ปีที่เลือก</th><th>เปลี่ยนแปลง</th></tr></thead><tbody id="resourceMonthlyTable"></tbody></table></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="view" id="view-carbon">
+        <div class="section-intro"><div><span class="section-tag">CARBON CENTER</span><h2>ศูนย์ข้อมูลก๊าซเรือนกระจก</h2><p>รองรับทั้งค่าก๊าซเรือนกระจกที่บันทึกโดยตรง และการคำนวณจาก Activity Data × Emission Factor</p></div></div>
+        <div class="grid three-col" id="carbonSummary"></div>
+        <div class="grid two-col">
+          <article class="card">
+            <div class="card-head"><div><span class="section-tag">EMISSION FACTOR</span><h3>ตั้งค่า Emission Factor</h3></div></div>
+            <div class="warning-box">ค่า EF ในระบบเริ่มต้นเว้นว่างไว้เพื่อป้องกันการนำค่าที่ไม่ผ่านการรับรองไปใช้อ้างอิง กรุณากรอกค่าจากแหล่งที่หน่วยงานรับรอง พร้อมบันทึกแหล่งอ้างอิง</div>
+            <div id="efTable"></div>
+          </article>
+          <article class="card">
+            <div class="card-head"><div><span class="section-tag">CALCULATED</span><h3>ประมาณการ CO₂e จากข้อมูลทรัพยากร</h3></div></div>
+            <div id="calculatedCarbon"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-targets">
+        <div class="section-intro"><div><span class="section-tag">NET ZERO TARGET</span><h2>กำหนดและติดตามเป้าหมาย</h2><p>ใช้ค่าปีก่อนหน้าเป็น Baseline และกำหนดเป้าหมายลดก๊าซเรือนกระจกของปีที่เลือก</p></div></div>
+        <div class="target-layout">
+          <article class="card target-card">
+            <div class="target-progress" id="targetProgress"></div>
+          </article>
+          <article class="card admin-only">
+            <div class="card-head"><div><span class="section-tag">SET TARGET</span><h3>ตั้งเป้าหมายรายปี</h3></div></div>
+            <form id="targetForm" class="form-grid">
+              <label>ปีเป้าหมาย<input id="targetYear" type="number" min="2500" max="2700" required></label>
+              <label>เป้าหมายลด GHG (%)<input id="targetPercent" type="number" min="0" max="100" step="0.1" required></label>
+              <label class="full">หมายเหตุ<input id="targetNote" type="text" placeholder="เช่น เป้าหมาย Green Office / Net Zero Campus"></label>
+              <button class="primary-btn full" type="submit">บันทึกเป้าหมาย</button>
+            </form>
+          </article>
+        </div>
+        <article class="card"><div class="card-head"><div><span class="section-tag">TARGET HISTORY</span><h3>ประวัติเป้าหมาย</h3></div></div><div class="table-wrap"><table><thead><tr><th>ปี</th><th>Baseline</th><th>เป้าหมายลด</th><th>Target CO₂e</th><th>ผลจริง</th><th>สถานะ</th></tr></thead><tbody id="targetTable"></tbody></table></div></article>
+      </section>
+
+      <section class="view" id="view-actions">
+        <div class="section-intro"><div><span class="section-tag">ACTION PLAN</span><h2>มาตรการลดการใช้ทรัพยากร</h2><p>เชื่อมจาก “พบปัญหา” → “กำหนดมาตรการ” → “ผู้รับผิดชอบ” → “ติดตามผล”</p></div><button class="primary-btn admin-only" id="addActionBtn">＋ เพิ่มมาตรการ</button></div>
+        <div id="actionBoard" class="action-board"></div>
+      </section>
+
+      <section class="view" id="view-entry">
+        <div class="section-intro"><div><span class="section-tag">DATA ENTRY</span><h2>บันทึกข้อมูลการใช้ทรัพยากร</h2><p>ข้อมูลใหม่จะอัปเดต Dashboard และรายงานอัตโนมัติ</p></div></div>
+        <div class="grid two-col">
+          <article class="card">
+            <form id="dataEntryForm" class="form-grid">
+              <label>ประเภททรัพยากร<select id="entryResource" required></select></label>
+              <label>ปี พ.ศ.<input id="entryYear" type="number" min="2500" max="2700" required></label>
+              <label>เดือน<select id="entryMonth" required></select></label>
+              <label>ปริมาณ<input id="entryAmount" type="number" min="0" step="0.001" required></label>
+              <label>อาคาร/หน่วยงาน<input id="entryBuilding" type="text" value="คณะวิทยาศาสตร์และเทคโนโลยี"></label>
+              <label>แหล่งข้อมูล<input id="entrySource" type="text" placeholder="เช่น ใบแจ้งค่าไฟ / บันทึกชั่งขยะ"></label>
+              <label class="full">หมายเหตุ<textarea id="entryNote" rows="3" placeholder="รายละเอียดเพิ่มเติม"></textarea></label>
+              <button class="primary-btn full" type="submit">บันทึกข้อมูล</button>
+            </form>
+          </article>
+          <article class="card">
+            <div class="card-head"><div><span class="section-tag">LATEST RECORDS</span><h3>รายการล่าสุด</h3></div></div>
+            <div id="latestRecords"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-reports">
+        <div class="section-intro"><div><span class="section-tag">REPORTS</span><h2>รายงานผลการใช้ทรัพยากร</h2><p>สรุปปีที่เลือกเทียบกับปีก่อนหน้า พร้อมพิมพ์หรือบันทึกเป็น PDF ผ่านเบราว์เซอร์</p></div><div class="action-row"><button class="secondary-btn" id="exportCsvBtn">Export CSV</button><button class="primary-btn" id="printReportBtn">พิมพ์ / Save PDF</button></div></div>
+        <div id="reportSheet" class="report-sheet"></div>
+      </section>
+
+      <section class="view" id="view-users">
+        <div class="section-intro"><div><span class="section-tag">ACCESS CONTROL</span><h2>ผู้ใช้งานและสิทธิ์</h2><p>Admin จัดการบทบาทของผู้ใช้ในระบบได้ โดย Google Apps Script ตรวจสิทธิ์ Admin/User ก่อนอ่านหรือแก้ไขข้อมูลทุกครั้ง</p></div></div>
+        <article class="card">
+          <div class="card-head"><div><span class="section-tag">USERS</span><h3>บัญชีผู้ใช้</h3></div><button class="secondary-btn compact" id="refreshUsersBtn" type="button">↻ รีเฟรช</button></div>
+          <form id="createUserForm" class="form-grid admin-only" style="margin-bottom:18px">
+            <label>ชื่อผู้ใช้<input id="newUserName" required placeholder="ชื่อ-นามสกุล"></label>
+            <label>อีเมล<input id="newUserEmail" type="email" required placeholder="name@vru.ac.th"></label>
+            <label>รหัสผ่านเริ่มต้น<input id="newUserPassword" type="password" minlength="8" required placeholder="อย่างน้อย 8 ตัวอักษร"></label>
+            <label>สิทธิ์<select id="newUserRole"><option value="user">USER</option><option value="admin">ADMIN</option></select></label>
+            <div class="full"><button class="primary-btn" type="submit">＋ เพิ่มผู้ใช้</button></div>
+          </form>
+          <div class="table-wrap"><table><thead><tr><th>ชื่อ</th><th>อีเมล</th><th>บทบาท</th><th>สถานะ</th><th>วันที่สร้าง</th><th>จัดการ</th></tr></thead><tbody id="usersTable"></tbody></table></div>
+          <div class="warning-box" style="margin-top:16px">Admin: จัดการ Emission Factor, Target, Action Plan, Import ข้อมูล และสิทธิ์ผู้ใช้ได้ · User: ดู Dashboard/รายงาน และบันทึกข้อมูลทรัพยากรได้</div>
+        </article>
+      </section>
+
+      <section class="view" id="view-settings">
+        <div class="section-intro"><div><span class="section-tag">DATA & SETTINGS</span><h2>จัดการข้อมูล</h2><p>นำเข้าข้อมูลจริง สำรองข้อมูล หรือล้างข้อมูลสาธิต</p></div></div>
+        <div class="grid two-col">
+          <article class="card">
+            <div class="card-head"><div><span class="section-tag">IMPORT / EXPORT</span><h3>CSV Data</h3></div></div>
+            <p class="muted">รูปแบบคอลัมน์: <code>year,month,resource,amount,building,source,note</code></p>
+            <div class="button-stack">
+              <label class="file-btn">เลือกไฟล์ CSV<input id="csvInput" type="file" accept=".csv,text/csv" hidden></label>
+              <button class="secondary-btn" id="downloadTemplateBtn">ดาวน์โหลด CSV Template</button>
+              <button class="secondary-btn" id="backupJsonBtn">สำรองข้อมูล JSON</button>
+            </div>
+            <div id="importStatus" class="status-message"></div>
+          </article>
+          <article class="card">
+            <div class="card-head"><div><span class="section-tag">DATA SOURCE</span><h3>แหล่งข้อมูลตั้งต้น</h3></div></div>
+            <p>ระบบออกแบบตามหมวดสถิติ Green Office ของคณะวิทยาศาสตร์และเทคโนโลยี ซึ่งเผยแพร่สถิติปี 2566 เปรียบเทียบกับช่วงปีก่อนหน้า</p>
+            <a class="source-link" href="https://sci.vru.ac.th/home/greenoffice" target="_blank" rel="noopener">เปิดหน้า Green Office ↗</a>
+            <div class="source-list"><span>⚡ ไฟฟ้า</span><span>💧 น้ำประปา</span><span>🗑 ขยะทั่วไป</span><span>♻ ขยะรีไซเคิล</span><span>🌿 ขยะย่อยสลาย</span><span>☣ ขยะอันตราย</span><span>⛽ ดีเซล</span><span>🚗 เบนซิน</span><span>🌍 ก๊าซเรือนกระจก</span></div>
+          </article>
+        </div>
+        <article class="card">
+          <div class="card-head"><div><span class="section-tag">CLOUD SETUP</span><h3>สถานะฐานข้อมูลกลาง</h3></div></div>
+          <div id="cloudSetupInfo" class="setup-info"></div>
+          <div class="action-row">
+            <button class="secondary-btn cloud-only" id="seedCloudBtn" type="button">นำข้อมูลสาธิตขึ้น Cloud</button>
+            <button class="danger-btn local-only" id="resetDemoBtn" type="button">รีเซ็ต Local Demo</button>
+          </div>
+        </article>
+      </section>
+
+      <footer class="footer">SCI GreenTrack · Google Sheets Edition · Netlify + Google Apps Script + Google Sheets · Admin/User</footer>
+    </main>
+  </div>
+
+  <dialog id="actionDialog" class="modal">
+    <form method="dialog" id="actionForm">
+      <div class="modal-head"><div><span class="section-tag">NEW ACTION</span><h3>เพิ่มมาตรการ</h3></div><button class="icon-btn" value="cancel">×</button></div>
+      <div class="form-grid">
+        <label class="full">ชื่อมาตรการ<input id="actionTitle" required placeholder="เช่น ปรับอุณหภูมิแอร์เป็น 26°C"></label>
+        <label>หมวด<select id="actionResource"></select></label>
+        <label>ผู้รับผิดชอบ<input id="actionOwner" required></label>
+        <label>วันที่เริ่ม<input id="actionStart" type="date" required></label>
+        <label>วันที่สิ้นสุด<input id="actionEnd" type="date"></label>
+        <label>เป้าหมายลด (%)<input id="actionReduction" type="number" min="0" max="100" step="0.1"></label>
+        <label>สถานะ<select id="actionStatus"><option>วางแผน</option><option>กำลังดำเนินการ</option><option>เสร็จสิ้น</option></select></label>
+        <label class="full">รายละเอียด<textarea id="actionDetail" rows="3"></textarea></label>
+      </div>
+      <div class="modal-actions"><button class="secondary-btn" value="cancel">ยกเลิก</button><button class="primary-btn" id="saveActionBtn" value="default">บันทึกมาตรการ</button></div>
+    </form>
+  </dialog>
+
+  <script src="config.js"></script>
+  <script src="cloud.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
